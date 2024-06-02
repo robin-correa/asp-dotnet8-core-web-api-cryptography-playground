@@ -19,7 +19,7 @@ namespace CryptographyPlayground.API.Controllers
         public IActionResult EncryptData([FromBody] EncryptRequest request)
         {
             string randomSymmetricKey = _encryptionService.GenerateRandomSymmetricKey(32); // 32 bytes for AES-256
-            string encryptedSymmetricKey = _encryptionService.EncryptSymmetricKey(randomSymmetricKey, "./RSAKeys/public.pem");
+            string encryptedSymmetricKey = _encryptionService.EncryptSymmetricKey(randomSymmetricKey, "./RSAKeys/OpenSSL/public.pem");
             if (encryptedSymmetricKey == null)
             {
                 return BadRequest("Failed to encrypt the symmetric key.");
@@ -45,7 +45,7 @@ namespace CryptographyPlayground.API.Controllers
         [HttpPost("decrypt")]
         public IActionResult DecryptData([FromBody] DecryptRequest request)
         {
-            string decryptedData = _encryptionService.DecryptData(request.EncryptedSymmetricKey, request.EncryptedData, "./RSAKeys/private.pem");
+            string decryptedData = _encryptionService.DecryptData(request.EncryptedSymmetricKey, request.EncryptedData, "./RSAKeys/OpenSSL/private.pem");
             if (decryptedData == null)
             {
                 return BadRequest("Failed to decrypt the data.");

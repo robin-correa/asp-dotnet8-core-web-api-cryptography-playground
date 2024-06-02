@@ -10,6 +10,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddSingleton<OpenSSLService>();
+builder.Services.AddSingleton<PGPService>();
 
 var app = builder.Build();
 
