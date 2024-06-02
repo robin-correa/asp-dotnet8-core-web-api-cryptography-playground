@@ -9,7 +9,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddSingleton<EncryptionService>();
+builder.Services.AddSingleton<OpenSSLService>();
 
 var app = builder.Build();
 

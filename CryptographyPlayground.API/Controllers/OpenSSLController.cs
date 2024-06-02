@@ -6,11 +6,11 @@ namespace CryptographyPlayground.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class CryptController : ControllerBase
+    public class OpenSSLController : ControllerBase
     {
-        private readonly EncryptionService _encryptionService;
+        private readonly OpenSSLService _encryptionService;
 
-        public CryptController(EncryptionService encryptionService)
+        public OpenSSLController(OpenSSLService encryptionService)
         {
             _encryptionService = encryptionService;
         }
@@ -18,9 +18,18 @@ namespace CryptographyPlayground.API.Controllers
         [HttpPost("encrypt")]
         public IActionResult EncryptData([FromBody] EncryptRequest request)
         {
-            string randomSymmetricKey = _encryptionService.GenerateRandomSymmetricKey(32);
+            string randomSymmetricKey = _encryptionService.GenerateRandomSymmetricKey(32); // 32 bytes for AES-256
             string encryptedSymmetricKey = _encryptionService.EncryptSymmetricKey(randomSymmetricKey, "./RSAKeys/public.pem");
+            if (encryptedSymmetricKey == null)
+            {
+                return BadRequest("Failed to encrypt the symmetric key.");
+            }
+
             string encryptedData = _encryptionService.EncryptDataBySymmetricKey(request.DataToEncrypt, randomSymmetricKey);
+            if (encryptedData == null)
+            {
+                return BadRequest("Failed to encrypt the data.");
+            }
 
             var result = new
             {
@@ -37,6 +46,10 @@ namespace CryptographyPlayground.API.Controllers
         public IActionResult DecryptData([FromBody] DecryptRequest request)
         {
             string decryptedData = _encryptionService.DecryptData(request.EncryptedSymmetricKey, request.EncryptedData, "./RSAKeys/private.pem");
+            if (decryptedData == null)
+            {
+                return BadRequest("Failed to decrypt the data.");
+            }
 
             var result = new
             {
