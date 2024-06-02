@@ -482,3 +482,5 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+CryptographyPlayground.API/RSAKeys/public.pem
+CryptographyPlayground.API/RSAKeys/private.pem
