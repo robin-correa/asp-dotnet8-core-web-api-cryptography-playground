@@ -8,6 +8,8 @@ namespace CryptographyPlayground.API.Services
 {
     public class PGPService
     {
+        private const string PrivateKeyPassword = "password"; // Hardcoded password
+
         public string EncryptMessage(string message, string publicKeyPath)
         {
             try
@@ -26,20 +28,33 @@ namespace CryptographyPlayground.API.Services
             }
         }
 
-        public string DecryptMessage(string encryptedMessage, string privateKeyPath, string password)
+        public string DecryptMessage(string encryptedMessage, string privateKeyPath)
         {
             try
             {
-                var privateKey = ReadPrivateKey(privateKeyPath, password);
+                // Remove the PGP message markers
+                encryptedMessage = encryptedMessage.Replace("-----BEGIN PGP MESSAGE-----", "").Replace("-----END PGP MESSAGE-----", "").Trim();
+
+                // Convert Base64-encoded message to bytes
                 var encryptedData = Convert.FromBase64String(encryptedMessage);
-                using (var inputStream = new MemoryStream(encryptedData))
-                {
-                    var decryptedData = DecryptData(inputStream, privateKey);
-                    return Encoding.UTF8.GetString(decryptedData);
-                }
+
+                // Read the private key
+                var privateKey = ReadPrivateKey(privateKeyPath);
+
+                // Decrypt the data
+                var decryptedData = DecryptData(new MemoryStream(encryptedData), privateKey);
+
+                // Decode the decrypted bytes to a string (assuming it's UTF-8 encoded)
+                return Encoding.UTF8.GetString(decryptedData);
             }
-            catch (Exception)
+            catch (FormatException ex)
             {
+                Console.WriteLine("Input is not a valid Base64 string: " + ex.Message);
+                return null; // Indicate failure
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("An error occurred during decryption: " + e.Message);
                 return null; // Indicate failure
             }
         }
@@ -63,7 +78,7 @@ namespace CryptographyPlayground.API.Services
             throw new ArgumentException("Can't find encryption key in public key ring.");
         }
 
-        private PgpPrivateKey ReadPrivateKey(string privateKeyPath, string password)
+        private PgpPrivateKey ReadPrivateKey(string privateKeyPath)
         {
             using (StreamReader reader = File.OpenText(privateKeyPath))
             {
@@ -72,7 +87,7 @@ namespace CryptographyPlayground.API.Services
                 {
                     foreach (PgpSecretKey key in keyRing.GetSecretKeys())
                     {
-                        PgpPrivateKey privateKey = key.ExtractPrivateKey(password.ToCharArray());
+                        PgpPrivateKey privateKey = key.ExtractPrivateKey(PrivateKeyPassword.ToCharArray());
                         if (privateKey != null)
                         {
                             return privateKey;
@@ -115,6 +130,7 @@ namespace CryptographyPlayground.API.Services
                 }
             }
         }
+
         private byte[] DecryptData(Stream inputStream, PgpPrivateKey privateKey)
         {
             PgpObjectFactory pgpF = new PgpObjectFactory(PgpUtilities.GetDecoderStream(inputStream));

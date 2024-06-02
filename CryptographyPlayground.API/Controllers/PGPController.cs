@@ -1,4 +1,6 @@
-﻿using CryptographyPlayground.API.Services;
+﻿using System.Text;
+
+using CryptographyPlayground.API.Services;
 
 using Microsoft.AspNetCore.Mvc;
 
@@ -24,31 +26,30 @@ namespace CryptographyPlayground.API.Controllers
                 return BadRequest("Failed to encrypt the message.");
             }
 
-            var result = new
-            {
-                EncryptedMessage = encryptedMessage
-            };
+            // Wrap encrypted message with PGP header and footer
+            string pgpMessage = $"-----BEGIN PGP MESSAGE-----\n\n{encryptedMessage}\n\n-----END PGP MESSAGE-----";
 
-            return Ok(result);
+            return Content(pgpMessage, "text/plain");
         }
 
         [HttpPost("decrypt")]
-        public IActionResult DecryptMessage([FromBody] PgpDecryptRequest request)
+        public async Task<IActionResult> DecryptMessage([FromServices] IHttpContextAccessor httpContextAccessor)
         {
-            string decryptedMessage = _pgpService.DecryptMessage(request.EncryptedMessage, "./RSAKeys/PGP/private.asc", request.Password);
-            if (decryptedMessage == null)
+            var request = httpContextAccessor.HttpContext.Request;
+            using (StreamReader reader = new StreamReader(request.Body, Encoding.UTF8))
             {
-                return BadRequest("Failed to decrypt the message.");
+                string pgpMessage = await reader.ReadToEndAsync();
+                Console.WriteLine(pgpMessage);
+                string decryptedMessage = _pgpService.DecryptMessage(pgpMessage, "./RSAKeys/PGP/private.asc");
+
+                if (decryptedMessage == null)
+                {
+                    return BadRequest("Failed to decrypt the message.");
+                }
+
+                return Ok(decryptedMessage);
             }
-
-            var result = new
-            {
-                DecryptedMessage = decryptedMessage
-            };
-
-            return Ok(result);
         }
-
     }
     public class PgpEncryptRequest
     {
@@ -58,6 +59,5 @@ namespace CryptographyPlayground.API.Controllers
     public class PgpDecryptRequest
     {
         public string EncryptedMessage { get; set; }
-        public string Password { get; set; }
     }
 }

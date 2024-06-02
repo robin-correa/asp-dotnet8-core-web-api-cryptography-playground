@@ -11,6 +11,7 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddSingleton<OpenSSLService>();
 builder.Services.AddSingleton<PGPService>();
+builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
 
